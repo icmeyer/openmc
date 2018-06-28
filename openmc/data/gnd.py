@@ -3,11 +3,71 @@ from numbers import Real, Integral
 
 from six import add_metaclass
 import numpy as np
-
 import openmc.data
 import openmc.checkvalue as cv
 from openmc.mixin import EqualityMixin
-from function import Function1D
+from openmc.data.function import Function1D
+from .data import EV_PER_MEV
+
+#ACE file interpolation indicators using GND naming scheme
+INTERPOLATION_SCHEME = {1: 'flat', 2: 'lin-lin', 3: 'lin-log',
+                        4: 'log-lin', 5: 'log-log'}
+
+def from_ace(ace, idx=0, convert_units=True):
+    """ Create an XYs1D or Regions1D object as appropriate from an
+    ACE table.
+
+    Parameters
+    ----------
+    ace : openmc.data.ace.Table
+        An ACE table
+    idx : int
+        Offset to read from in XSS array (default of zero)
+    convert_units : bool
+        If the abscissa represents energy, indicate whether to convert MeV
+        to eV.
+
+    Returns
+    -------
+    openmc.data.XYs1D or openmc.data.Regions1D
+
+    """
+    #Get number of regions and pairs
+    n_regions = int(ace.xss[idx])
+    n_pairs = int(ace.xss[idx + 1 +2*n_regions])
+
+    #Get interpolation information
+    idx += 1
+    if n_regions == 0:
+        # 0 regions implies lin-lin interpolation by default
+        interpolation = 'lin-lin'
+        # Get (x,y) pairs
+        idx += 2*n_regions + 1
+        x = ace.xss[idx:idx + n_paris].copy()
+        y = ace.xss[idx + n_pairs:idx + 2*n_pairs].copy()
+
+        if convert_units:
+            x *= EV_PER_MEV
+
+        return XYs1D(x,y,interpolation)
+
+    elif n_regions == 1:
+        interpolation = ace.xss[idx + n_regions:idx + 2*n_regions].astype(int)
+        # Get (x,y) pairs
+        idx += 2*n_regions + 1
+        x = ace.xss[idx:idx + n_paris].copy()
+        y = ace.xss[idx + n_pairs:idx + 2*n_pairs].copy()
+
+        if convert_units:
+            x *= EV_PER_MEV
+
+        return XYs1D(x,y,interpolation)
+
+    else:
+        pass
+        ###FIXME: add construction of Regions1D
+
+
 
 class XYs1D(Function1D):
     """A one-dimensional tabulated function.
@@ -37,6 +97,10 @@ class XYs1D(Function1D):
     ----------
     x : Iterable of float
         Independent variable
+    domainMin : float
+        Minimum x value
+    domainMax : float
+        Maximum x value
     y : Iterable of float
         Dependent variable
     interpolation : str
@@ -54,6 +118,8 @@ class XYs1D(Function1D):
             self.interpolation = interpolation
 
         self.x = np.asarray(x)
+        self.domainMin = min(x)
+        self.domainMax = max(x)
         self.y = np.asarray(y)
 
     def __call__(self, x):
@@ -112,6 +178,14 @@ class XYs1D(Function1D):
         return self._x
 
     @property
+    def domainMin(self):
+        return self._domainMin
+
+    @property
+    def domainMax(self):
+        return self._domainMax
+
+    @property
     def y(self):
         return self._y
 
@@ -127,6 +201,16 @@ class XYs1D(Function1D):
     def x(self, x):
         cv.check_type('x values', x, Iterable, Real)
         self._x = x
+
+    @domainMin.setter
+    def domainMin(self, domainMin):
+        cv.check_type('domain minimum', domainMin, Iterable, Real)
+        self._domainMin = domainMin
+
+    @domainMax.setter
+    def domainMax(self, domainMax):
+        cv.check_type('domain maximum', domainMax, Iterable, Real)
+        self._domainMax = domainMax
 
     @y.setter
     def y(self, y):
@@ -231,3 +315,169 @@ class XYs1D(Function1D):
         y = dataset.value[1, :]
         interpolation = dataset.attrs['interpolation']
         return cls(x, y, interpolation)
+
+class Series1D(Function1D):
+    """A one-dimensional function stored as coeffecients of a polynomial 
+    sequence.
+
+    This class mirrors the 1-d series node from the GNDS format. The expansion
+    and the coefficients are specified.
+
+    Once an object has been created, it can be used as though it were an actual
+    function, e.g.:
+
+    >>> f = Series1D([0, 10], [4, 5])
+    >>> [f(xi) for xi in numpy.linspace(0, 10, 5)]
+    [4.0, 4.25, 4.5, 4.75, 5.0]
+
+    Parameters
+    ----------
+    c : Iterable of float
+        coefficient values
+    seriesType : Iterable of int
+        Interpolation scheme identification number, e.g., 3 means y is linear in
+        ln(x).
+    domainMin : float, optional
+        Minimum domain value
+    domainMax : float, optional
+        Maximum domain value
+
+    Attributes
+    ----------
+    c : Iterable of float
+        coefficient values
+    seriesType : Iterable of int
+        Interpolation scheme identification number, e.g., 3 means y is linear in
+        ln(x).
+    domainMin : float, optional
+        Minimum domain value
+    domainMax : float, optional
+        Maximum domain value
+    """
+    ###FIXME basically needs to be written
+
+
+class Regions1D(Function1D):
+    """A one-dimensional tabulated function.
+
+    This class mirrors the Regions1D node from the GNDS format. 
+    It will contain multiple subnodes of type XYs1D or polynomial1D that 
+    span its domain. 
+    Once an object has been created, it can be used as though it were an actual
+    function, e.g.:
+
+    >>> f = Regions1D([0, 10], [4, 5])
+    >>> [f(xi) for xi in numpy.linspace(0, 10, 5)]
+    [4.0, 4.25, 4.5, 4.75, 5.0]
+
+    Parameters
+    ----------
+    regions_list : List of objects type openmc.data.gnd.XYs1D or 
+                   openmc.data.gnd.1DSeries 
+
+    Attributes
+    ----------
+    regions_list : List of objects type openmc.data.gnd.XYs1D or 
+                   openmc.data.gnd.1DSeries 
+    domainBreaks : Iterable of float
+        Breakpoints for interpolation regions
+    domainMin : float
+        Minimum x value
+    domainMax : float
+        Maximum x value
+    n_regions : int
+        Number of interpolation regions
+
+    """
+    
+    def __init__(self, regions_list):
+        n_regions = len(regions_list)
+        domainBreaks = np.zeros([nregions*2])
+        for i in range(nregions):
+            domainRange = [regions_list[i].domainMin,regions_list[i].domainMax]
+            domainBreaks[i:i+2] = domainRange
+            self.regions[i] = regions_list[i]
+        
+        #Check that region is filled and domains are monotonically increasing
+        for i in range(nregions-1):
+            if domainBreaks[i+1] != domainBreaks[i+2]:
+                raise ValueError('Domain bounds of regions do not match')
+            domainBreaks.remove(i+2) #Eliminate duplicate values while checking
+            if domainBreaks[i+1] > domainBreaks[i+2]:
+                raise ValueError('Domains are not monotonically increasing')
+
+        self.domainBreaks = domainBreaks
+        self.domainMin = domainBreaks[0]
+        self.domainMax = domainBreaks[-1]
+        self.n_regions = n_regions
+
+    def __call__(self,x):
+        #Check if input is array or scalar
+        if isinstance(x, Iterable):
+            iterable = True
+            x = np.array(x)
+        else: 
+            iterable = False
+            x = np.array([x], dtype=float)
+
+        # Create output array
+        y = np.zeros_like(x)
+
+        # Get indices for interpolation
+        idx = np.searchsorted(self.domainBreaks, x)
+        
+        #Loop over interpolation regions
+        for k in range(self.n_regions):
+            # Get indices for the beginning and ending of this region
+            regionBegin = self.domainBreaks[k]
+            regionEnd = self.domainBreaks[k+1]
+
+            # Figure out which x values lie within this region
+            contained = (x >= regionBegin) & (x < regionEnd)
+            xk = x[contained] # Apply mask
+
+            #Fill y-values using the member object
+            y[contained] = self.region[0](xk) 
+
+        # In some cases, x values might be outside the tabulated region due only
+        # to precision, so we check if they're close and set them equal if so.
+        
+        y[np.isclose(x,self.x[ 0],atol=1e-14)] = self.regions[ 0](self.domainMin)
+        y[np.isclose(x,self.x[-1],atol=1e-14)] = self.regions[-1](self.domainMax)
+
+        return y if iterable else y[0]
+
+    def __len__(self):
+        return len(self.regions)
+
+    @property
+    def domainMin(self):
+        return self._domainMin
+
+    @property
+    def domainMax(self):
+        return self._domainMax
+
+    @property
+    def n_regions(self):
+        return len(self.x)
+
+    @property
+    def breakpoints(self):
+        return self._breakpoints
+
+    @domainMin.setter
+    def domainMin(self, domainMin):
+        cv.check_type('domain minimum', domainMin, Iterable, Real)
+        self._domainMin = domainMin
+
+    @domainMax.setter
+    def domainMax(self, domainMax):
+        cv.check_type('domain maximum', domainMax, Iterable, Real)
+        self._domainMax = domainMax
+
+    @breakpoints.setter
+    def breakpoints(self, breakpoints):
+        cv.check_type('breakpoints', breakpoints, Iterable, Real)
+        self._breakpoints = breakpoints
+
