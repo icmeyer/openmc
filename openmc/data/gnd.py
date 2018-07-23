@@ -1,8 +1,14 @@
+#Development notes:
+# Want to devlop some objects to assist in creating datastructures
+# that are similar to GND. 
+#
 from collections import Iterable, Callable
 from numbers import Real, Integral
 
 from six import add_metaclass
 import numpy as np
+from numpy.polynomial.legendre import legval
+
 import openmc.data
 import openmc.checkvalue as cv
 from openmc.mixin import EqualityMixin
@@ -12,7 +18,7 @@ from .data import EV_PER_MEV
 #ACE file interpolation indicators using GND naming scheme
 INTERPOLATION_SCHEME = {1: 'flat', 2: 'lin-lin', 3: 'lin-log',
                         4: 'log-lin', 5: 'log-log'}
-
+    
 def from_ace(ace, idx=0, convert_units=True):
     """ Create an XYs1D or Regions1D object as appropriate from an
     ACE table.
@@ -34,7 +40,7 @@ def from_ace(ace, idx=0, convert_units=True):
     """
     #Get number of regions and pairs
     n_regions = int(ace.xss[idx])
-    n_pairs = int(ace.xss[idx + 1 +2*n_regions])
+    n_pairs = int(ace.xss[idx+1+2*n_regions])
 
     #Get interpolation information
     idx += 1
@@ -43,8 +49,8 @@ def from_ace(ace, idx=0, convert_units=True):
         interpolation = 'lin-lin'
         # Get (x,y) pairs
         idx += 2*n_regions + 1
-        x = ace.xss[idx:idx + n_paris].copy()
-        y = ace.xss[idx + n_pairs:idx + 2*n_pairs].copy()
+        x = ace.xss[idx : idx + n_paris].copy()
+        y = ace.xss[idx+n_pairs : idx+2*n_pairs].copy()
 
         if convert_units:
             x *= EV_PER_MEV
@@ -52,11 +58,11 @@ def from_ace(ace, idx=0, convert_units=True):
         return XYs1D(x,y,interpolation)
 
     elif n_regions == 1:
-        interpolation = ace.xss[idx + n_regions:idx + 2*n_regions].astype(int)
+        interpolation = ace.xss[idx+n_regions : idx+2*n_regions].astype(int)
         # Get (x,y) pairs
         idx += 2*n_regions + 1
-        x = ace.xss[idx:idx + n_paris].copy()
-        y = ace.xss[idx + n_pairs:idx + 2*n_pairs].copy()
+        x = ace.xss[idx : idx+n_paris].copy()
+        y = ace.xss[idx+n_pairs : idx+2*n_pairs].copy()
 
         if convert_units:
             x *= EV_PER_MEV
@@ -334,9 +340,11 @@ class Series1D(Function1D):
     ----------
     c : Iterable of float
         coefficient values
-    seriesType : Iterable of int
+    series_type : Iterable of int
         Interpolation scheme identification number, e.g., 3 means y is linear in
         ln(x).
+    series_values : list
+        Coefficients of polynomial to be used in evaluation
     domainMin : float, optional
         Minimum domain value
     domainMax : float, optional
@@ -346,7 +354,7 @@ class Series1D(Function1D):
     ----------
     c : Iterable of float
         coefficient values
-    seriesType : Iterable of int
+    series_type : Iterable of int
         Interpolation scheme identification number, e.g., 3 means y is linear in
         ln(x).
     domainMin : float, optional
@@ -355,6 +363,14 @@ class Series1D(Function1D):
         Maximum domain value
     """
     ###FIXME basically needs to be written
+
+    def __init__(self, seriesType, series_values, domainMin, domainMax):
+        self.seriesType = self.seriesType
+
+    def __call__(self, x):
+        if series_type == 'legendre':
+            
+            
 
 
 class Regions1D(Function1D):
