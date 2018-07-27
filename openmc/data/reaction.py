@@ -18,6 +18,7 @@ from .endf import get_head_record, get_tab1_record, get_list_record, \
 from .energy_distribution import EnergyDistribution, LevelInelastic, \
     DiscretePhoton
 from .function import Tabulated1D, Polynomial
+from .gnd import from_ace
 from .kalbach_mann import KalbachMann
 from .laboratory import LaboratoryAngleEnergy
 from .nbody import NBodyPhaseSpace
@@ -226,7 +227,7 @@ def _get_fission_products_ace(ace):
             neutron.yield_ = Polynomial(coefficients)
         elif LNU == 2:
             # Tabular data form of nu
-            neutron.yield_ = Tabulated1D.from_ace(ace, idx + 1)
+            neutron.yield_ = from_ace(ace, idx + 1)
 
         products.append(neutron)
 
@@ -247,7 +248,7 @@ def _get_fission_products_ace(ace):
             prompt_neutron.yield_ = Polynomial(coefficients)
         elif LNU == 2:
             # Tabular data form of nu
-            prompt_neutron.yield_ = Tabulated1D.from_ace(ace, idx + 1)
+            prompt_neutron.yield_ = from_ace(ace, idx + 1)
 
         # Read total neutron yield
         total_neutron = Product('neutron')
@@ -265,14 +266,14 @@ def _get_fission_products_ace(ace):
             total_neutron.yield_ = Polynomial(coefficients)
         elif LNU == 2:
             # Tabular data form of nu
-            total_neutron.yield_ = Tabulated1D.from_ace(ace, idx + 1)
+            total_neutron.yield_ = from_ace(ace, idx + 1)
 
         products.append(prompt_neutron)
         derived_products.append(total_neutron)
 
     # Check for delayed nu data
     if ace.jxs[24] > 0:
-        yield_delayed = Tabulated1D.from_ace(ace, ace.jxs[24] + 1)
+        yield_delayed = from_ace(ace, ace.jxs[24] + 1)
 
         # Delayed neutron precursor distribution
         idx = ace.jxs[25]
@@ -285,7 +286,7 @@ def _get_fission_products_ace(ace):
             # Convert units of inverse shakes to inverse seconds
             delayed_neutron.decay_rate = ace.xss[idx] * 1.e8
 
-            group_probability = Tabulated1D.from_ace(ace, idx + 1)
+            group_probability = from_ace(ace, idx + 1)
             if np.all(group_probability.y == group_probability.y[0]):
                 delayed_neutron.yield_ = deepcopy(yield_delayed)
                 delayed_neutron.yield_.y *= group_probability.y[0]
@@ -603,7 +604,7 @@ def _get_photon_products_ace(ace, rx):
             assert mtmult == neutron_mt
 
             # Read photon yield as function of energy
-            photon.yield_ = Tabulated1D.from_ace(ace, idx + 1)
+            photon.yield_ = from_ace(ace, idx + 1)
 
         elif mftype == 13:
             # Cross section data from ENDF File 13
@@ -642,7 +643,7 @@ def _get_photon_products_ace(ace, rx):
         if loc == 0:
             # No angular distribution data are given for this reaction,
             # isotropic scattering is asssumed in LAB
-            energy = np.array([photon.yield_.x[0], photon.yield_.x[-1]])
+            energy = np.array([photon.yield_.domainMin, photon.yield_.domainMax])
             mu_isotropic = Uniform(-1., 1.)
             distribution.angle = AngleDistribution(
                 energy, [mu_isotropic, mu_isotropic])
@@ -1002,7 +1003,7 @@ class Reaction(EqualityMixin):
                     if abs(ty) > 100:
                         # Energy-dependent neutron yield
                         idx = ace.jxs[11] + abs(ty) - 101
-                        yield_ = Tabulated1D.from_ace(ace, idx)
+                        yield_ = from_ace(ace, idx)
                     else:
                         # 0-order polynomial i.e. a constant
                         yield_ = Polynomial((abs(ty),))
@@ -1025,7 +1026,7 @@ class Reaction(EqualityMixin):
                 lnw = int(ace.xss[ace.jxs[10] + i_reaction - 1])
                 while lnw > 0:
                     # Applicability of this distribution
-                    neutron.applicability.append(Tabulated1D.from_ace(
+                    neutron.applicability.append(from_ace(
                         ace, ace.jxs[11] + lnw + 2))
 
                     # Read energy distribution data

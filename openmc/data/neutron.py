@@ -19,6 +19,7 @@ from .data import ATOMIC_SYMBOL, K_BOLTZMANN, EV_PER_MEV
 from .endf import Evaluation, SUM_RULES, get_head_record, get_tab1_record
 from .fission_energy import FissionEnergyRelease
 from .function import Tabulated1D, Sum, ResonancesWithBackground
+from .gnd import XYs1D, Regions1D
 from .grid import linearize, thin
 from .njoy import make_ace
 from .product import Product
@@ -389,7 +390,7 @@ class IncidentNeutron(EqualityMixin):
 
         # Set 0K energy grid and elastic scattering cross section
         self.energy['0K'] = x
-        self[2].xs['0K'] = Tabulated1D(x, y)
+        self[2].xs['0K'] = XYs1D(x, y)
 
     def get_reaction_components(self, mt):
         """Determine what reactions make up summed reaction.
@@ -643,12 +644,12 @@ class IncidentNeutron(EqualityMixin):
 
         # Create summed reactions (total and absorption)
         total = Reaction(1)
-        total.xs[strT] = Tabulated1D(energy, total_xs)
+        total.xs[strT] = XYs1D(energy, total_xs)
         data.summed_reactions[1] = total
 
         if np.count_nonzero(absorption_xs) > 0:
             absorption = Reaction(27)
-            absorption.xs[strT] = Tabulated1D(energy, absorption_xs)
+            absorption.xs[strT] = XYs1D(energy, absorption_xs)
             data.summed_reactions[27] = absorption
 
         # Read each reaction

@@ -119,8 +119,8 @@ class Tabulated1D(Function1D):
     breakpoints : Iterable of int
         Breakpoints for interpolation regions
     interpolation : Iterable of int
-        Interpolation scheme identification number, e.g., 3 means y is linear in
-        ln(x).
+        Interpolation scheme identification number, e.g., 3 means y is linear
+        in ln(x).
 
     Attributes
     ----------
