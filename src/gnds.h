@@ -58,7 +58,7 @@ private:
 
 } //namespace openmc
 
-#endif // OPENMC_ENDF_H
+#endif // OPENMC_GNDS_H
 
 
 

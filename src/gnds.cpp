@@ -139,11 +139,23 @@ double XYs1D::operator()(double x) const
 // Regions1D implementation
 //==============================================================================
 
-Regions1D::Regions1D(hid_t dset)
-{ // TODO write the way to import from hdf5
-  // Just need to set up a loop that fills the vector of Function1D types
+Regions1D::Regions1D(hid_t group)
+{
+  std::string temp
   read_attribute(dset, "domainbreaks", domainbreaks_);
   n_regions_ = domainbreaks_.size() - 1;
+  for (int i=0; i < n_regions_; i++){
+    hid_t region = open_dataset(group, "region"+std::to_string(i));
+    read_attribute(region, "type", temp);
+    if (temp == "XYs1D") {
+      regions_.push_back(std::unique_ptr<Function1D{new XYs1D{region}});
+    } else if (temp == "Polynomial") {
+      regions_.push_back(std::unique_ptr<Function1D{new Polynomial{region}});
+    } else if (temp == "Legendre") {
+      regions_.push_back(std::unique_ptr<Function1D{new Legendre{region}});
+    }
+    close_dataset(region);
+  }
 }
 
 double Regions1D::operator()(double x) const
@@ -155,7 +167,7 @@ double Regions1D::operator()(double x) const
     return (*regions_)[n_regions_ - 1](x);
   } else {
     i = lower_bound_index(domainbreaks_.begin(), domainbreaks_.end(), domainbreaks);
-    return (*regions_)[i](x);
+    return (*regions_[i])(x);
   }
 }
 
