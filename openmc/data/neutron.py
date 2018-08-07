@@ -19,7 +19,7 @@ from .data import ATOMIC_SYMBOL, K_BOLTZMANN, EV_PER_MEV
 from .endf import Evaluation, SUM_RULES, get_head_record, get_tab1_record
 from .fission_energy import FissionEnergyRelease
 from .function import Tabulated1D, Sum, ResonancesWithBackground
-from .gnd import XYs1D, Regions1D
+from .gnds import XYs1D, Regions1D
 from .grid import linearize, thin
 from .njoy import make_ace
 from .product import Product

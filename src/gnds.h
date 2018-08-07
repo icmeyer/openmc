@@ -11,6 +11,7 @@ namespace openmc {
 
 Interpolation int2interp(int i);
 bool is_fission(int MT);
+std::unique_ptr<Function1D> get1D(hid_t obj_id, const char* name);
 
 class Function1D {
 public:

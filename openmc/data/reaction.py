@@ -18,7 +18,7 @@ from .endf import get_head_record, get_tab1_record, get_list_record, \
 from .energy_distribution import EnergyDistribution, LevelInelastic, \
     DiscretePhoton
 from .function import Tabulated1D, Polynomial
-from .gnd import from_ace
+from .gnds import from_ace
 from .kalbach_mann import KalbachMann
 from .laboratory import LaboratoryAngleEnergy
 from .nbody import NBodyPhaseSpace

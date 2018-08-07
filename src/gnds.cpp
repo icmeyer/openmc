@@ -34,6 +34,34 @@ bool is_fission(int mt)
   return mt == 18 || mt == 19 || mt == 20 || mt == 21 || mt == 38;
 }
 
+//General function for returning a pointer to a Function1D-type from hdf5 group
+std::uniqe_ptr<Function1D>
+get1D(hid_t group, const char* name)
+{
+  H5O_info_t oinfo;
+  H5Oget_info_by_name(group, name, &oinfo, H5P_DEFAULT);
+  std::str temp;
+
+  if (oinfo.type == H5O_TYPE_DATSET){
+    hid_t dset = open_dataset(group, name);
+    read_attribute(dset, "type", temp)
+    if (temp == "XYs1D") {
+      function = std::unique_ptr<Function1D{new XYs1D{dset}};
+    } else if (temp == "Polynomial") {
+      function = std::unique_ptr<Function1D{new Polynomial{dset}};
+    } else if (temp == "Legendre") {
+      function = std::unique_ptr<Function1D{new Legendre{dset}};
+    }
+    close_dataset(dset);
+    return function;
+  } else if (oinfo.type == H5O_TYPE_GROUP) {
+    hid_t grp = open_group(group, name)
+    function = std::unique_ptr<Function1D{new Regions1D{grp}};
+    close_dataset(grp);
+    return function;
+  }
+}
+
 //==============================================================================
 // Polynomial implementation
 //==============================================================================
@@ -60,7 +88,7 @@ double Polynomial::operator()(double x) const
 //==============================================================================
 
 Legendre::Legendre(hid_t dset)
-{
+
   // Read coefficients into a vecot
   read_dataset(dset, coef_);
 }
@@ -142,21 +170,34 @@ double XYs1D::operator()(double x) const
 Regions1D::Regions1D(hid_t group)
 {
   std::string temp
-  read_attribute(dset, "domainbreaks", domainbreaks_);
+  read_attribute(group, "domainbreaks", domainbreaks_);
   n_regions_ = domainbreaks_.size() - 1;
   for (int i=0; i < n_regions_; i++){
-    hid_t region = open_dataset(group, "region"+std::to_string(i));
-    read_attribute(region, "type", temp);
-    if (temp == "XYs1D") {
-      regions_.push_back(std::unique_ptr<Function1D{new XYs1D{region}});
-    } else if (temp == "Polynomial") {
-      regions_.push_back(std::unique_ptr<Function1D{new Polynomial{region}});
-    } else if (temp == "Legendre") {
-      regions_.push_back(std::unique_ptr<Function1D{new Legendre{region}});
-    }
-    close_dataset(region);
+    std::str region_str = "region_" + std::to_string(i);
+    regions_.push_back(std::unique_ptr<Function1D>
+                       get1D(group, region_str.c_str()));
   }
 }
+
+//Old implementation just in case
+//Regions1D::Regions1D(hid_t group)
+//{
+//  std::string temp
+//  read_attribute(dset, "domainbreaks", domainbreaks_);
+//  n_regions_ = domainbreaks_.size() - 1;
+//  for (int i=0; i < n_regions_; i++){
+//    hid_t region = open_dataset(group, "region"+std::to_string(i));
+//    read_attribute(region, "type", temp);
+//    if (temp == "XYs1D") {
+//      regions_.push_back(std::unique_ptr<Function1D{new XYs1D{region}});
+//    } else if (temp == "Polynomial") {
+//      regions_.push_back(std::unique_ptr<Function1D{new Polynomial{region}});
+//    } else if (temp == "Legendre") {
+//      regions_.push_back(std::unique_ptr<Function1D{new Legendre{region}});
+//    }
+//    close_dataset(region);
+//  }
+//}
 
 double Regions1D::operator()(double x) const
 { // Write call function for Regions1D

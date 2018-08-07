@@ -1,6 +1,6 @@
 # Development notes:
 # Want to devlop some objects to assist in creating datastructures
-# that are similar to GND.
+# that are similar to GNDS.
 from collections import Iterable, Callable
 from numbers import Real, Integral
 
@@ -14,7 +14,7 @@ from openmc.mixin import EqualityMixin
 from .function import Function1D
 from .data import EV_PER_MEV
 
-# ACE file interpolation indicators using GND naming scheme
+# ACE file interpolation indicators using GNDS naming scheme
 INTERPOLATION_SCHEME = {1: 'flat', 2: 'lin-lin', 3: 'lin-log',
                         4: 'log-lin', 5: 'log-log'}
 
@@ -389,13 +389,13 @@ class Regions1D(Function1D):
 
     Parameters
     ----------
-    regions : List of objects type openmc.data.gnd.XYs1D or
-              openmc.data.gnd.1DSeries
+    regions : List of objects type openmc.data.gnds.XYs1D or
+              openmc.data.gnds.1DSeries
 
     Attributes
     ----------
-    regions : List of objects type openmc.data.gnd.XYs1D or
-              openmc.data.gnd.1DSeries
+    regions : List of objects type openmc.data.gnds.XYs1D or
+              openmc.data.gnds.1DSeries
     domainbreaks : Iterable of float
         Breakpoints for interpolation regions
     domainMin : float
