@@ -89,6 +89,7 @@ extern "C" {
   hid_t create_group(hid_t parent_id, const char* name);
   void close_dataset(hid_t dataset_id);
   void close_group(hid_t group_id);
+  void close_object(hid_t object_id);
   int dataset_ndims(hid_t dset);
   size_t dataset_typesize(hid_t dset);
   hid_t file_open(const char* filename, char mode, bool parallel);
@@ -103,6 +104,7 @@ extern "C" {
   bool object_exists(hid_t object_id, const char* name);
   hid_t open_dataset(hid_t group_id, const char* name);
   hid_t open_group(hid_t group_id, const char* name);
+  hid_t open_object(hid_t group_it, const char* name);
   void read_attr_double(hid_t obj_id, const char* name, double* buffer);
   void read_attr_int(hid_t obj_id, const char* name, int* buffer);
   void read_attr_string(hid_t obj_id, const char* name, size_t slen,

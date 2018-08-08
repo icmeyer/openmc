@@ -125,6 +125,13 @@ close_group(hid_t group_id)
 }
 
 
+void
+close_object(hid_t group_id)
+{
+  if (H5Oclose(group_id) < 0) fatal_error("Failed to close object");
+}
+
+
 int
 dataset_ndims(hid_t dset)
 {
@@ -397,6 +404,15 @@ open_group(hid_t group_id, const char* name)
   ensure_exists(group_id, name);
   return H5Gopen(group_id, name, H5P_DEFAULT);
 }
+
+
+hid_t
+open_group(hid_t group_id, const char* name)
+{
+  ensure_exists(group_id, name);
+  return H5Oopen(group_id, name, H5P_DEFAULT);
+}
+
 
 void
 read_attr(hid_t obj_id, const char* name, hid_t mem_type_id, void* buffer)

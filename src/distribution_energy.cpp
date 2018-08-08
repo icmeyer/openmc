@@ -5,6 +5,7 @@
 #include <iterator>  // for back_inserter
 
 #include "endf.h"
+#include "gnds.h"
 #include "hdf5_interface.h"
 #include "math_functions.h"
 #include "random_lcg.h"
@@ -251,15 +252,13 @@ double ContinuousTabular::sample(double E) const
 MaxwellEnergy::MaxwellEnergy(hid_t group)
 {
   read_attribute(group, "u", u_);
-  hid_t dset = open_dataset(group, "theta");
-  theta_ = Tabulated1D{dset};
-  close_dataset(dset);
+  theta_ = get_function1D(group, "theta");
 }
 
 double MaxwellEnergy::sample(double E) const
 {
   // Get temperature corresponding to incoming energy
-  double theta = theta_(E);
+  double theta = (*theta_)(E);
 
   while (true) {
     // Sample maxwell fission spectrum
@@ -277,15 +276,13 @@ double MaxwellEnergy::sample(double E) const
 Evaporation::Evaporation(hid_t group)
 {
   read_attribute(group, "u", u_);
-  hid_t dset = open_dataset(group, "theta");
-  theta_ = Tabulated1D{dset};
-  close_dataset(dset);
+  theta_ = get_function1D(group, "theta");
 }
 
 double Evaporation::sample(double E) const
 {
   // Get temperature corresponding to incoming energy
-  double theta = theta_(E);
+  double theta = (*theta_)(E);
 
   double y = (E - u_)/theta;
   double v = 1.0 - std::exp(-y);
@@ -311,19 +308,15 @@ WattEnergy::WattEnergy(hid_t group)
   read_attribute(group, "u", u_);
 
   // Read tabulated functions
-  hid_t dset = open_dataset(group, "a");
-  a_ = Tabulated1D{dset};
-  close_dataset(dset);
-  dset = open_dataset(group, "b");
-  b_ = Tabulated1D{dset};
-  close_dataset(dset);
+  a_ = get_function1D(group, "a");
+  b_ = get_function1D(group, "b");
 }
 
 double WattEnergy::sample(double E) const
 {
   // Determine Watt parameters at incident energy
-  double a = a_(E);
-  double b = b_(E);
+  double a = (*a_)(E);
+  double b = (*b_)(E);
 
   while (true) {
     // Sample energy-dependent Watt fission spectrum

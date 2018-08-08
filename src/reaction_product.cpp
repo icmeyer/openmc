@@ -41,21 +41,8 @@ ReactionProduct::ReactionProduct(hid_t group)
   if (emission_mode_ == EmissionMode::delayed)
     read_attribute(group, "decay_rate", decay_rate_);
 
-  //-------------OLD CODE START-------------------------------------------------
   // Read secondary particle yield
-  //hid_t yield = open_dataset(group, "yield");
-  //read_attribute(yield, "type", temp);
-  //if (temp == "Tabulated1D") {
-  //  yield_ = std::unique_ptr<Function1D>{new Tabulated1D{yield}};
-  //} else if (temp == "Polynomial") {
-  //  yield_ = std::unique_ptr<Function1D>{new Polynomial{yield}};
-  //}
-  //close_dataset(yield);
-  //------------OLD CODE END----------------------------------------------------
-  //------------NEW CODE START--------------------------------------------------
-  //Read secondary particle yield
   yield_ = get1D(group, "yield");
-  //------------NEW CODE END----------------------------------------------------
 
   int n;
   read_attribute(group, "n_distribution", n);

@@ -106,7 +106,7 @@ public:
   //! \return Sampled energy in [eV]
   double sample(double E) const;
 private:
-  Tabulated1D theta_; //!< Incoming energy dependent parameter
+  UPtrFunction theta_; //!< Incoming energy dependent parameter
   double u_; //!< Restriction energy
 };
 
@@ -124,7 +124,7 @@ public:
   //! \return Sampled energy in [eV]
   double sample(double E) const;
 private:
-  Tabulated1D theta_; //!< Incoming energy dependent parameter
+  UPtrFunction theta_; //!< Incoming energy dependent parameter
   double u_; //!< Restriction energy
 };
 
@@ -142,8 +142,8 @@ public:
   //! \return Sampled energy in [eV]
   double sample(double E) const;
 private:
-  Tabulated1D a_; //!< Energy-dependent 'a' parameter
-  Tabulated1D b_; //!< Energy-dependent 'b' parameter
+  UPtrFunction a_; //!< Energy-dependent 'a' parameter
+  UPtrFunction b_; //!< Energy-dependent 'b' parameter
   double u_; //!< Restriction energy
 };
 

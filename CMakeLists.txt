@@ -395,6 +395,7 @@ add_library(libopenmc SHARED
   src/initialize.cpp
   src/finalize.cpp
   src/geometry_aux.cpp
+  src/gnds.cpp
   src/hdf5_interface.cpp
   src/lattice.cpp
   src/math_functions.cpp

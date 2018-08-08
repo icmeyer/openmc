@@ -5,6 +5,8 @@
 #include <iterator>  // for back_inserter
 
 #include "constants.h"
+#include "endf.h"
+#include "function.h"
 #include "hdf5_interface.h"
 #include "math_functions.h"
 #include "search.h"
@@ -13,90 +15,24 @@
 
 namespace openmc {
 
-Interpolation int2interp(int i)
-{
-  switch (i) {
-  case 1:
-    return Interpolation::histogram;
-  case 2:
-    return Interpolation::lin_lin;
-  case 3:
-    return Interpolation::lin_log;
-  case 4:
-    return Interpolation::log_lin;
-  case 5:
-    return Interpolation::log_log;
-  }
-}
-
-bool is_fission(int mt)
-{
-  return mt == 18 || mt == 19 || mt == 20 || mt == 21 || mt == 38;
-}
-
 //General function for returning a pointer to a Function1D-type from hdf5 group
-std::uniqe_ptr<Function1D>
-get1D(hid_t group, const char* name)
+UPtrFunction
+get_function1D(hid_t group, const char* name)
 {
-  H5O_info_t oinfo;
-  H5Oget_info_by_name(group, name, &oinfo, H5P_DEFAULT);
+  obj = open_object(group, name);
   std::str temp;
+  read_attribute(obj, "type", temp);
 
-  if (oinfo.type == H5O_TYPE_DATSET){
-    hid_t dset = open_dataset(group, name);
-    read_attribute(dset, "type", temp)
-    if (temp == "XYs1D") {
-      function = std::unique_ptr<Function1D{new XYs1D{dset}};
-    } else if (temp == "Polynomial") {
-      function = std::unique_ptr<Function1D{new Polynomial{dset}};
-    } else if (temp == "Legendre") {
-      function = std::unique_ptr<Function1D{new Legendre{dset}};
-    }
-    close_dataset(dset);
-    return function;
-  } else if (oinfo.type == H5O_TYPE_GROUP) {
-    hid_t grp = open_group(group, name)
-    function = std::unique_ptr<Function1D{new Regions1D{grp}};
-    close_dataset(grp);
-    return function;
+  if (temp == "XYs1D") {
+    function = UPtrFunction{new XYs1D{obj}};
+  } else if (temp == "Polynomial") {
+    function = UPtrFunction{new Polynomial{obj}};
+  } else if (temp == "Regions1D") {
+    function = UPtrFunction{new Regions1D{obj}};
   }
-}
-
-//==============================================================================
-// Polynomial implementation
-//==============================================================================
-
-Polynomial::Polynomial(hid_t dset)
-{
-  // Read coefficients into a vector
-  read_dataset(dset, coef_);
-}
-
-double Polynomial::operator()(double x) const
-{
-  // Use Horner's rule to evaluate polynomial. Note that coefficients are
-  // ordered in increasing powers of x.
-  double y = 0.0;
-  for (auto c = coef_.crbegin(); c != coef_.crend(); ++c) {
-    y = y*x + *c;
+  close_object(grp);
+  return function;
   }
-  return y;
-}
-
-//==============================================================================
-// Legendre implementation
-//==============================================================================
-
-Legendre::Legendre(hid_t dset)
-
-  // Read coefficients into a vecot
-  read_dataset(dset, coef_);
-}
-
-double Legendre::operator()(double x) const
-{
-  int n = coef_.size();
-  return evaluate_legendre_c(n, coef_, x);
 }
 
 //==============================================================================
@@ -115,8 +51,6 @@ XYs1D::XYs1D(hid_t dset)
   auto xs = xt::view(arr, 0);
   auto ys = xt::view(arr, 1);
 
-  // FIXME What do these two lines do???
-  // Why use xtensor when they end up as vectors anyway?
   std::copy(xs.begin(), xs.end(), std::back_inserter(x_));
   std::copy(ys.begin(), ys.end(), std::back_inserter(y_));
   n_pairs_ = x_.size();
@@ -174,8 +108,7 @@ Regions1D::Regions1D(hid_t group)
   n_regions_ = domainbreaks_.size() - 1;
   for (int i=0; i < n_regions_; i++){
     std::str region_str = "region_" + std::to_string(i);
-    regions_.push_back(std::unique_ptr<Function1D>
-                       get1D(group, region_str.c_str()));
+    regions_.push_back(UPtrFunction get1D(group, region_str.c_str()));
   }
 }
 

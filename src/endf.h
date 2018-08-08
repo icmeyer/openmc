@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "constants.h"
+#include "function.h"
 #include "hdf5.h"
 
 namespace openmc {
@@ -20,33 +21,6 @@ Interpolation int2interp(int i);
 //! \param[in] MT ENDF MT value
 //! \return Whether corresponding reaction is a fission reaction
 bool is_fission(int MT);
-
-//==============================================================================
-//! Abstract one-dimensional function
-//==============================================================================
-
-class Function1D {
-public:
-  virtual double operator()(double x) const = 0;
-};
-
-//==============================================================================
-//! One-dimensional function expressed as a polynomial
-//==============================================================================
-
-class Polynomial : public Function1D {
-public:
-  //! Construct polynomial from HDF5 data
-  //! \param[in] dset Dataset containing coefficients
-  explicit Polynomial(hid_t dset);
-
-  //! Evaluate the polynomials
-  //! \param[in] x independent variable
-  //! \return Polynomial evaluated at x
-  double operator()(double x) const;
-private:
-  std::vector<double> coef_; //!< Polynomial coefficients
-};
 
 //==============================================================================
 //! One-dimensional interpolable function

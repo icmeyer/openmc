@@ -46,8 +46,8 @@ public:
   ParticleType particle_; //!< Particle type
   EmissionMode emission_mode_; //!< Emission mode
   double decay_rate_; //!< Decay rate (for delayed neutron precursors) in [1/s]
-  std::unique_ptr<Function1D> yield_; //!< Yield as a function of energy
-  std::vector<Tabulated1D> applicability_; //!< Applicability of distribution
+  UPtrFunction yield_; //!< Yield as a function of energy
+  std::vector<UPtrFunction> applicability_; //!< Applicability of distribution
   std::vector<Secondary> distribution_; //!< Secondary angle-energy distribution
 };
 
