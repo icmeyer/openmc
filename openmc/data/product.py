@@ -89,7 +89,7 @@ class Product(EqualityMixin):
     @applicability.setter
     def applicability(self, applicability):
         cv.check_type('product distribution applicability', applicability,
-                      Iterable, Tabulated1D)
+                      Iterable, Function1D)
         self._applicability = applicability
 
     @decay_rate.setter
@@ -177,7 +177,7 @@ class Product(EqualityMixin):
         for i in range(n_distribution):
             dgroup = group['distribution_{}'.format(i)]
             if 'applicability' in dgroup:
-                applicability.append(Tabulated1D.from_hdf5(
+                applicability.append(Function1D.from_hdf5(
                     dgroup['applicability']))
             distribution.append(AngleEnergy.from_hdf5(dgroup))
 

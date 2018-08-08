@@ -18,7 +18,7 @@ from .endf import get_head_record, get_tab1_record, get_list_record, \
 from .energy_distribution import EnergyDistribution, LevelInelastic, \
     DiscretePhoton
 from .function import Tabulated1D, Polynomial
-from .gnds import from_ace
+from .gnds import from_ace, XYs1D
 from .kalbach_mann import KalbachMann
 from .laboratory import LaboratoryAngleEnergy
 from .nbody import NBodyPhaseSpace
@@ -300,7 +300,7 @@ def _get_fission_products_ace(ace):
 
                 # Calculate group yield
                 group_yield = yield_delayed(energy) * group_probability(energy)
-                delayed_neutron.yield_ = Tabulated1D(energy, group_yield)
+                delayed_neutron.yield_ = XYs1D(energy, group_yield)
 
             # Advance position
             nr = int(ace.xss[idx + 1])
@@ -435,7 +435,7 @@ def _get_fission_products_endf(ev):
                 # Here we handle the fact that the delayed neutron yield is the
                 # product of the total delayed neutron yield and the
                 # "applicability" of the energy distribution law in file 5.
-                if isinstance(yield_, Tabulated1D):
+                if isinstance(yield_, XYs1D):
                     if np.all(applicability.y == applicability.y[0]):
                         yield_.y *= applicability.y[0]
                     else:
@@ -447,7 +447,7 @@ def _get_fission_products_endf(ev):
 
                         # Calculate group yield
                         group_yield = yield_(energy) * applicability(energy)
-                        delayed_neutron.yield_ = Tabulated1D(energy, group_yield)
+                        delayed_neutron.yield_ = XYs1D(energy, group_yield)
                 elif isinstance(yield_, Polynomial):
                     if len(yield_) == 1:
                         delayed_neutron.yield_ = deepcopy(applicability)
@@ -538,7 +538,7 @@ def _get_activation_products(ev, rx):
                 # Calculate yield as ratio
                 yield_ = np.zeros_like(energy)
                 yield_[idx] = prod_xs[idx] / neutron_xs[idx]
-                p.yield_ = Tabulated1D(energy, yield_)
+                p.yield_ = XYs1D(energy, yield_)
 
             # Check if product already exists from MF=6 and if it does, just
             # overwrite the existing yield.
@@ -623,7 +623,7 @@ def _get_photon_products_ace(ace, rx):
             # Calculate photon yield
             yield_ = np.zeros_like(photon_prod_xs)
             yield_[idx] = photon_prod_xs[idx] / neutron_xs[idx]
-            photon.yield_ = Tabulated1D(energy, yield_)
+            photon.yield_ = XYs1D(energy, yield_)
 
         else:
             raise ValueError("MFTYPE must be 12, 13, 16. Got {0}".format(
@@ -748,7 +748,7 @@ def _get_photon_products_endf(ev, rx):
             # Calculate yield as ratio
             yield_ = np.zeros_like(energy)
             yield_[idx] = photon_prod_xs[idx] / neutron_xs[idx]
-            photon.yield_ = Tabulated1D(energy, yield_)
+            photon.yield_ = XYs1D(energy, yield_)
 
             # Get photon energy distribution
             law = items[3]
@@ -932,7 +932,7 @@ class Reaction(EqualityMixin):
                             'exists.'.format(mt, T))
                     xs = Tgroup['xs'].value
                     threshold_idx = Tgroup['xs'].attrs['threshold_idx'] - 1
-                    tabulated_xs = Tabulated1D(energy[T][threshold_idx:], xs)
+                    tabulated_xs = XYs1D(energy[T][threshold_idx:], xs)
                     tabulated_xs._threshold_idx = threshold_idx
                     rx.xs[T] = tabulated_xs
 
@@ -988,7 +988,7 @@ class Reaction(EqualityMixin):
                      "to zero.".format(rx.mt, ace.name))
                 xs[xs < 0.0] = 0.0
 
-            tabulated_xs = Tabulated1D(energy, xs)
+            tabulated_xs = XYs1D(energy, xs)
             tabulated_xs._threshold_idx = threshold_idx
             rx.xs[strT] = tabulated_xs
 
@@ -1049,7 +1049,7 @@ class Reaction(EqualityMixin):
                      "Setting to zero.".format(ace.name))
                 elastic_xs[elastic_xs < 0.0] = 0.0
 
-            tabulated_xs = Tabulated1D(grid, elastic_xs)
+            tabulated_xs = XYs1D(grid, elastic_xs)
             tabulated_xs._threshold_idx = 0
             rx.xs[strT] = tabulated_xs
 

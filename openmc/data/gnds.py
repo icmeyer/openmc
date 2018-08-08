@@ -59,11 +59,11 @@ def from_ace(ace, idx=0, convert_units=True):
 
     if n_regions == 0:
         # 0 regions implies linear-linear interpolation by default
-        interpolation = 'lin-lin'
+        interpolation = 2
         return XYs1D(x, y, interpolation)
 
     elif n_regions == 1:
-        interpolation = INTERPOLATION_SCHEME[interp_ints[0]]
+        interpolation = interp_ints[0]
         return XYs1D(x, y, interpolation)
 
     else:
@@ -80,10 +80,28 @@ def from_ace(ace, idx=0, convert_units=True):
             else:
                 region_x = x[breakpoints[i]:]
                 region_y = y[breakpoints[i]:]
-            interpolation = INTERPOLATION_SCHEME[interp_ints[i]]
+            interpolation = interp_ints[i]
             regions.append(XYs1D(region_x,region_y,interpolation))
 
         return Regions1D(regions)
+
+
+# TODO: general from_hdf5 method?
+# def from_hdf5_1D(group):
+#    """Generate the appropriate Function1D found in an hdf5 file
+#
+#    Parameters
+#    ----------
+#    group : h5py.Group
+#        HDF5 group to read from
+#
+#    Returns
+#    -------
+#    openmc.data.Product
+#        Reaction product
+#
+#    """
+
 
 
 class XYs1D(Function1D):
@@ -107,8 +125,9 @@ class XYs1D(Function1D):
         Independent variable
     y : Iterable of float
         Dependent variable
-    interpolation : str, optional
-        Interpolation scheme identification
+    interpolation : int
+        Interpolation scheme identification number, e.g., 3 means y is linear
+        in ln(x)
 
     Attributes
     ----------
@@ -120,8 +139,9 @@ class XYs1D(Function1D):
         Maximum x value
     y : Iterable of float
         Dependent variable
-    interpolation : str
-        Interpolation scheme identification
+    interpolation : int
+        Interpolation scheme identification number, e.g., 3 means y is linear
+        in ln(x)
     n_pairs : int
         Number of tabulated (x,y) pairs
 
@@ -130,7 +150,7 @@ class XYs1D(Function1D):
     def __init__(self, x, y, interpolation=None):
         if interpolation is None:
             #linear-linear interpolation by default
-            self.interpolation = 'lin-lin'
+            self.interpolation = 2
         else:
             self.interpolation = interpolation
 
@@ -154,30 +174,36 @@ class XYs1D(Function1D):
         # Get indices for interpolation
         idx = np.searchsorted(self.x, x, side='right') - 1
 
-        xi = self.x[idx]       # low edge of corresponding bins
-        xi1 = self.x[idx + 1]  # high edge of corresponding bins
-        yi = self.y[idx]
-        yi1 = self.y[idx + 1]
+        i_begin = 0;
+        i_end = self.n_pairs - 1
+        # Figure out which idx values lie within this region
+        contained = (idx >= i_begin) & (idx < i_end)
 
-        if self.interpolation == 'flat':
+        xk = x[contained]                 # x values in this region
+        xi = self.x[idx[contained]]       # low edge of corresponding bins
+        xi1 = self.x[idx[contained] + 1]  # high edge of corresponding bins
+        yi = self.y[idx[contained]]
+        yi1 = self.y[idx[contained] + 1]
+
+        if self.interpolation == 1:
             # Histogram
-            y = yi
+            y[contained] = yi
 
-        elif self.interpolation == 'lin-lin':
+        elif self.interpolation == 2:
             # Linear-linear
-            y = yi + (x - xi)/(xi1 - xi)*(yi1 - yi)
+            y[contained] = yi + (xk - xi)/(xi1 - xi)*(yi1 - yi)
 
-        elif self.interpolation == 'lin-log':
+        elif self.interpolation == 3:
             # Linear-log
-            y = yi + np.log(x/xi)/np.log(xi1/xi)*(yi1 - yi)
+            y[contained] = yi + np.log(xk/xi)/np.log(xi1/xi)*(yi1 - yi)
 
-        elif self.interpolation == 'log-lin':
+        elif self.interpolation == 4:
             # Log-linear
-            y = yi*np.exp((x - xi)/(xi1 - xi)*np.log(yi1/yi))
+            y[contained] = yi*np.exp((xk - xi)/(xi1 - xi)*np.log(yi1/yi))
 
-        elif self.interpolation == 'log-log':
+        elif self.interpolation == 5:
             # Log-log
-            y = (yi*np.exp(np.log(x/xi)/np.log(xi1/xi)
+            y[contained] = (yi*np.exp(np.log(xk/xi)/np.log(xi1/xi)
                             *np.log(yi1/yi)))
 
         #In some cases, x values might be outside the tabulated region due only
@@ -236,7 +262,7 @@ class XYs1D(Function1D):
 
     @interpolation.setter
     def interpolation(self, interpolation):
-        cv.check_type('interpolation', interpolation, Iterable, str)
+        cv.check_type('interpolation', interpolation, Integral)
         self._interpolation = interpolation
 
     def integral(self):
@@ -339,7 +365,7 @@ class Legendre(np.polynomial.legendre.Legendre, Function1D):
     in the future.
 
     """
-    def to_hdf5(self, group, name='xy'):
+    def to_hdf5(self, group, name='legendre'):
         """Write legendre polynomial function to an HDF5 group
 
         Parameters
@@ -364,7 +390,7 @@ class Legendre(np.polynomial.legendre.Legendre, Function1D):
 
         Returns
         -------
-        openmc.data.Function1D
+        openmc.data.Function1D.Legendre
             Function read from dataset
 
         """
@@ -413,7 +439,6 @@ class Regions1D(Function1D):
         domainbreaks = np.zeros([n_regions*2])
         for i in range(n_regions):
             domainRange = [regions_list[i].domainMin,regions_list[i].domainMax]
-            print(domainRange)
             domainbreaks[2*i:2*i+2] = domainRange
             self.regions.append(regions_list[i])
 
@@ -522,5 +547,32 @@ class Regions1D(Function1D):
         group.attrs['type'] = np.string_(type(self).__name__)
         group.attrs['domainbreaks'] = self.domainbreaks
         for idx, region in enumerate(self.regions):
-            region.to_hdf5(group, name = 'region'+str(idx))
+            region.to_hdf5(group, name = 'region_'+str(idx))
+
+    @classmethod
+    def from_hdf5(cls, group):
+        """Generate regions1D object from an HDF5 dataset
+
+        Parameters
+        ----------
+        group : h5py.Group
+            Group to read from
+
+        Returns
+        -------
+        openmc.data.Regions1D
+            Function read from dataset
+        """
+        if group.attrs['type'].decode() != cls.__name__:
+            raise ValueError("Expected an HDF5 attribute 'type' equal to '"
+                             + cls.__name__ + "'")
+
+        regions = []
+        for name in group:
+            dataset = group[name]
+            for subclass in Function1D.__subclasses__():
+                if dataset.attrs['type'].decode() == subclass.__name__:
+                        regions.append(subclass.from_hdf5(dataset))
+
+        return cls(regions)
 

@@ -93,7 +93,7 @@ class Function1D(EqualityMixin, metaclass=ABCMeta):
             if dataset.attrs['type'].decode() == subclass.__name__:
                 return subclass.from_hdf5(dataset)
         raise ValueError("Unrecognized Function1D class: '"
-                         + dataset.attrs['type'].decode() + "'")
+                     + dataset.attrs['type'].decode() + "'")
 
 
 class Tabulated1D(Function1D):
@@ -169,7 +169,7 @@ class Tabulated1D(Function1D):
 
         # Loop over interpolation regions
         for k in range(len(self.breakpoints)):
-            # Get indices for the begining and ending of this region
+            # Get indices for the beginning and ending of this region
             i_begin = self.breakpoints[k-1] - 1 if k > 0 else 0
             i_end = self.breakpoints[k] - 1
 
@@ -347,7 +347,7 @@ class Tabulated1D(Function1D):
         """
         if dataset.attrs['type'].decode() != cls.__name__:
             raise ValueError("Expected an HDF5 attribute 'type' equal to '"
-                             + cls.__name__ + "'")
+                    + cls.__name__ + "', got this shit instead: '"+ dataset.attrs['type'].decode()+"'")
 
         x = dataset.value[0, :]
         y = dataset.value[1, :]
@@ -531,63 +531,6 @@ class Sum(EqualityMixin):
     def functions(self, functions):
         cv.check_type('functions', functions, Iterable, Callable)
         self._functions = functions
-
-
-class Regions1D(EqualityMixin):
-    """Piecewise composition of multiple functions.
-
-    This class allows you to create a callable object which is composed
-    of multiple other callable objects, each applying to a specific interval
-
-    Parameters
-    ----------
-    functions : Iterable of Callable
-        Functions which are to be combined in a piecewise fashion
-    breakpoints : Iterable of float
-        The values of the dependent variable that define the domain of
-        each function. The *i*th and *(i+1)*th values are the limits of the
-        domain of the *i*th function. Values must be monotonically increasing.
-
-    Attributes
-    ----------
-    functions : Iterable of Callable
-        Functions which are to be combined in a piecewise fashion
-    breakpoints : Iterable of float
-        The breakpoints between each function
-
-    """
-
-    def __init__(self, functions, breakpoints):
-        self.functions = functions
-        self.breakpoints = breakpoints
-
-    def __call__(self, x):
-        i = np.searchsorted(self.breakpoints, x)
-        if isinstance(x, Iterable):
-            ans = np.empty_like(x)
-            for j in range(len(i)):
-                ans[j] = self.functions[i[j]](x[j])
-            return ans
-        else:
-            return self.functions[i](x)
-
-    @property
-    def functions(self):
-        return self._functions
-
-    @property
-    def breakpoints(self):
-        return self._breakpoints
-
-    @functions.setter
-    def functions(self, functions):
-        cv.check_type('functions', functions, Iterable, Callable)
-        self._functions = functions
-
-    @breakpoints.setter
-    def breakpoints(self, breakpoints):
-        cv.check_iterable_type('breakpoints', breakpoints, Real)
-        self._breakpoints = breakpoints
 
 
 class ResonancesWithBackground(EqualityMixin):
