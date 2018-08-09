@@ -4,7 +4,6 @@
 #include <cstddef>   // for size_t
 #include <iterator>  // for back_inserter
 
-#include "endf.h"
 #include "gnds.h"
 #include "hdf5_interface.h"
 #include "math_functions.h"

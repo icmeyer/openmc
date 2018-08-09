@@ -19,10 +19,11 @@ namespace openmc {
 UPtrFunction
 get_function1D(hid_t group, const char* name)
 {
-  obj = open_object(group, name);
-  std::str temp;
+  hid_t obj = open_object(group, name);
+  std::string temp;
   read_attribute(obj, "type", temp);
 
+  UPtrFunction function;
   if (temp == "XYs1D") {
     function = UPtrFunction{new XYs1D{obj}};
   } else if (temp == "Polynomial") {
@@ -30,10 +31,10 @@ get_function1D(hid_t group, const char* name)
   } else if (temp == "Regions1D") {
     function = UPtrFunction{new Regions1D{obj}};
   }
-  close_object(grp);
+  close_object(obj);
   return function;
-  }
 }
+
 
 //==============================================================================
 // XYs1D implementation
@@ -103,12 +104,12 @@ double XYs1D::operator()(double x) const
 
 Regions1D::Regions1D(hid_t group)
 {
-  std::string temp
+  std::string temp;
   read_attribute(group, "domainbreaks", domainbreaks_);
   n_regions_ = domainbreaks_.size() - 1;
   for (int i=0; i < n_regions_; i++){
-    std::str region_str = "region_" + std::to_string(i);
-    regions_.push_back(UPtrFunction get1D(group, region_str.c_str()));
+    std::string region_str = "region_" + std::to_string(i);
+    regions_.push_back(get_function1D(group, region_str.c_str()));
   }
 }
 
@@ -136,11 +137,11 @@ double Regions1D::operator()(double x) const
 { // Write call function for Regions1D
   int i;
   if (x < domainbreaks_[0]) {
-    return (*regions_)[0](x);
+    return (*regions_[0])(x);
   } else if (x > domainbreaks_[n_regions_]) {
-    return (*regions_)[n_regions_ - 1](x);
+    return (*regions_[n_regions_ - 1])(x);
   } else {
-    i = lower_bound_index(domainbreaks_.begin(), domainbreaks_.end(), domainbreaks);
+    i = lower_bound_index(domainbreaks_.begin(), domainbreaks_.end(), x);
     return (*regions_[i])(x);
   }
 }

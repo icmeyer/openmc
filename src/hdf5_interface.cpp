@@ -407,7 +407,7 @@ open_group(hid_t group_id, const char* name)
 
 
 hid_t
-open_group(hid_t group_id, const char* name)
+open_object(hid_t group_id, const char* name)
 {
   ensure_exists(group_id, name);
   return H5Oopen(group_id, name, H5P_DEFAULT);

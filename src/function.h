@@ -1,6 +1,7 @@
 #ifndef OPENMC_FUNCTION_H
 #define OPENMC_FUNCTION_H
 
+#include <memory> //for unique_ptr
 #include <vector>
 
 #include "hdf5.h"

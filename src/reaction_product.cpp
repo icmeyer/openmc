@@ -3,6 +3,7 @@
 #include <memory> // for unique_ptr
 #include <string> // for string
 
+#include "gnds.h"
 #include "hdf5_interface.h"
 #include "random_lcg.h"
 #include "secondary_correlated.h"
@@ -42,7 +43,7 @@ ReactionProduct::ReactionProduct(hid_t group)
     read_attribute(group, "decay_rate", decay_rate_);
 
   // Read secondary particle yield
-  yield_ = get1D(group, "yield");
+  yield_ = get_function1D(group, "yield");
 
   int n;
   read_attribute(group, "n_distribution", n);
@@ -54,9 +55,7 @@ ReactionProduct::ReactionProduct(hid_t group)
 
     // Read applicability
     if (n > 1) {
-      hid_t app = open_dataset(dgroup, "applicability");
-      applicability_.emplace_back(app);
-      close_dataset(app);
+      applicability_.push_back(get_function1D(dgroup, "applicability"));
     }
 
     // Determine distribution type and read data
@@ -83,7 +82,7 @@ void ReactionProduct::sample(double E_in, double& E_out, double& mu) const
     double c = prn();
     for (int i = 0; i < n; ++i) {
       // Determine probability that i-th energy distribution is sampled
-      prob += applicability_[i](E_in);
+      prob += (*applicability_[i])(E_in);
 
       // If i-th distribution is sampled, sample energy from the distribution
       if (c <= prob) {

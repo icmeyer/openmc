@@ -72,7 +72,6 @@ def from_ace(ace, idx=0, convert_units=True):
         breakpoints = np.insert(breakpoints, 0, 0)
         regions = []
         for i in range(n_regions):
-            print(breakpoints[i], breakpoints[i+1])
             # Subregions are boundary inclusive
             if i is not (n_regions - 1):
                 region_x = x[breakpoints[i]:breakpoints[i+1]+1]
@@ -84,24 +83,6 @@ def from_ace(ace, idx=0, convert_units=True):
             regions.append(XYs1D(region_x,region_y,interpolation))
 
         return Regions1D(regions)
-
-
-# TODO: general from_hdf5 method?
-# def from_hdf5_1D(group):
-#    """Generate the appropriate Function1D found in an hdf5 file
-#
-#    Parameters
-#    ----------
-#    group : h5py.Group
-#        HDF5 group to read from
-#
-#    Returns
-#    -------
-#    openmc.data.Product
-#        Reaction product
-#
-#    """
-
 
 
 class XYs1D(Function1D):
