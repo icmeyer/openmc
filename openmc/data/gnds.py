@@ -19,7 +19,7 @@ INTERPOLATION_SCHEME = {1: 'flat', 2: 'lin-lin', 3: 'lin-log',
                         4: 'log-lin', 5: 'log-log'}
 
 
-def from_ace(ace, idx=0, convert_units=True):
+def gnds_from_ace(ace, idx=0, convert_units=True):
     """ Create an XYs1D or Regions1D object as appropriate from an
     ACE table.
 

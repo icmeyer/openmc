@@ -9,6 +9,7 @@ import openmc.checkvalue as cv
 from openmc.mixin import EqualityMixin
 from .angle_energy import AngleEnergy
 from .function import Tabulated1D, Polynomial, Function1D
+from .gnds import XYs1D
 
 
 class Product(EqualityMixin):
@@ -29,9 +30,9 @@ class Product(EqualityMixin):
         Distributions of energy and angle of product.
     emission_mode : {'prompt', 'delayed', 'total'}
         Indicate whether the particle is emitted immediately or whether it
-        results from the decay of reaction product (e.g., neutron emitted from a
-        delayed neutron precursor). A special value of 'total' is used when the
-        yield represents particles from prompt and delayed sources.
+        results from the decay of reaction product (e.g., neutron emitted from
+        a delayed neutron precursor). A special value of 'total' is used when
+        the yield represents particles from prompt and delayed sources.
     particle : str
         What particle the reaction product is.
     yield_ : openmc.data.Function1D
@@ -89,7 +90,7 @@ class Product(EqualityMixin):
     @applicability.setter
     def applicability(self, applicability):
         cv.check_type('product distribution applicability', applicability,
-                      Iterable, Function1D)
+                      Iterable, XYs1D)
         self._applicability = applicability
 
     @decay_rate.setter

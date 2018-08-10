@@ -346,8 +346,9 @@ class Tabulated1D(Function1D):
 
         """
         if dataset.attrs['type'].decode() != cls.__name__:
+            print(dataset.name)
             raise ValueError("Expected an HDF5 attribute 'type' equal to '"
-                    + cls.__name__ + "', got this shit instead: '"+ dataset.attrs['type'].decode()+"'")
+                    + cls.__name__ + "', got this instead: '"+ dataset.attrs['type'].decode()+"'")
 
         x = dataset.value[0, :]
         y = dataset.value[1, :]
