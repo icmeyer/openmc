@@ -136,9 +136,9 @@ Regions1D::Regions1D(hid_t group)
 double Regions1D::operator()(double x) const
 { // Write call function for Regions1D
   int i;
-  if (x < domainbreaks_[0]) {
+  if (x <= domainbreaks_[0]) {
     return (*regions_[0])(x);
-  } else if (x > domainbreaks_[n_regions_]) {
+  } else if (x >= domainbreaks_[n_regions_]) {
     return (*regions_[n_regions_ - 1])(x);
   } else {
     i = lower_bound_index(domainbreaks_.begin(), domainbreaks_.end(), x);
