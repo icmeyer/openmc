@@ -1,4 +1,4 @@
-#include "function.h"
+#include "openmc/function.h"
 
 #include "hdf5_interface.h"
 

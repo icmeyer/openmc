@@ -1,4 +1,4 @@
-#include "hdf5_interface.h"
+#include "openmc/hdf5_interface.h"
 
 #include <array>
 #include <cstring>
@@ -9,9 +9,9 @@
 #include "hdf5_hl.h"
 #ifdef OPENMC_MPI
 #include "mpi.h"
-#include "message_passing.h"
+#include "openmc/message_passing.h"
 #endif
-#include "error.h"
+#include "openmc/error.h"
 
 
 namespace openmc {
@@ -334,7 +334,7 @@ get_groups(hid_t group_id, char* name[])
 }
 
 std::vector<std::string>
-group_names(hid_t group_id)
+member_names(hid_t group_id, H5O_type_t type)
 {
   // Determine number of links in the group
   H5G_info_t info;
@@ -348,7 +348,7 @@ group_names(hid_t group_id)
     // Determine type of object (and skip non-group)
     H5Oget_info_by_idx(group_id, ".", H5_INDEX_NAME, H5_ITER_INC, i, &oinfo,
                        H5P_DEFAULT);
-    if (oinfo.type != H5O_TYPE_GROUP) continue;
+    if (oinfo.type != type) continue;
 
     // Get size of name
     size = 1 + H5Lget_name_by_idx(group_id, ".", H5_INDEX_NAME, H5_ITER_INC,
@@ -363,6 +363,17 @@ group_names(hid_t group_id)
   return names;
 }
 
+std::vector<std::string>
+group_names(hid_t group_id)
+{
+  return member_names(group_id, H5O_TYPE_GROUP);
+}
+
+std::vector<std::string>
+dataset_names(hid_t group_id)
+{
+  return member_names(group_id, H5O_TYPE_DATASET);
+}
 
 bool
 object_exists(hid_t object_id, const char* name)

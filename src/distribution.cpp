@@ -1,4 +1,4 @@
-#include "distribution.h"
+#include "openmc/distribution.h"
 
 #include <algorithm> // for copy
 #include <cmath>     // for sqrt, floor, max
@@ -6,10 +6,10 @@
 #include <numeric>   // for accumulate
 #include <string>    // for string, stod
 
-#include "error.h"
-#include "math_functions.h"
-#include "random_lcg.h"
-#include "xml_interface.h"
+#include "openmc/error.h"
+#include "openmc/math_functions.h"
+#include "openmc/random_lcg.h"
+#include "openmc/xml_interface.h"
 
 namespace openmc {
 
@@ -245,7 +245,7 @@ UPtrDist distribution_from_xml(pugi::xml_node node)
     openmc::fatal_error("Distribution type must be specified.");
 
   // Determine type of distribution
-  std::string type = get_node_value(node, "type");
+  std::string type = get_node_value(node, "type", true, true);
 
   // Allocate extension of Distribution
   if (type == "uniform") {

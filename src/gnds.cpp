@@ -1,17 +1,18 @@
-#include "gnds.h"
+#include "openmc/gnds.h"
 
 #include <algorithm> // for copy
 #include <cmath>     // for log, exp
 #include <iterator>  // for back_inserter
 
-#include "constants.h"
-#include "endf.h"
-#include "function.h"
-#include "hdf5_interface.h"
-#include "math_functions.h"
-#include "search.h"
 #include "xtensor/xarray.hpp"
 #include "xtensor/xview.hpp"
+
+#include "openmc/constants.h"
+#include "openmc/endf.h"
+#include "openmc/function.h"
+#include "openmc/hdf5_interface.h"
+#include "openmc/math_functions.h"
+#include "openmc/search.h"
 
 namespace openmc {
 
