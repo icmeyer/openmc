@@ -130,8 +130,8 @@ class XYs1D(Function1D):
             self.interpolation = interpolation
 
         self.x = np.asarray(x)
-        self.domainMin = min(x)
-        self.domainMax = max(x)
+        self.domainMin = x[0]
+        self.domainMax = x[-1]
         self.y = np.asarray(y)
 
     def __call__(self, x):
@@ -333,46 +333,6 @@ class XYs1D(Function1D):
         y = dataset.value[1, :]
         interpolation = dataset.attrs['interpolation']
         return cls(x, y, interpolation)
-
-
-class Legendre(np.polynomial.legendre.Legendre, Function1D):
-    """GNDS adds capability for storage of data in this format. May be needed
-    in the future.
-
-    """
-    def to_hdf5(self, group, name='legendre'):
-        """Write legendre polynomial function to an HDF5 group
-
-        Parameters
-        ----------
-        group : h5py.Group
-            HDF5 group to write to
-        name : str
-            Name of the dataset to create
-
-        """
-        dataset = group.create_dataset(name, data=self.coef)
-        dataset.attrs['type'] = np.string_(type(self).__name__)
-
-    @classmethod
-    def from_hdf5(cls, dataset):
-        """Generate function from an HDF5 dataset
-
-        Parameters
-        ----------
-        dataset : h5py.Dataset
-            Dataset to read from
-
-        Returns
-        -------
-        openmc.data.Function1D.Legendre
-            Function read from dataset
-
-        """
-        if dataset.attrs['type'].decode() != cls.__name__:
-            raise ValueError("Expected an HDF5 attribute 'type' equal to '"
-                             + cls.__name__ + "'")
-        return cls(dataset.value)
 
 
 class Regions1D(Function1D):
