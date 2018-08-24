@@ -181,7 +181,7 @@ class XYs1D(Function1D):
             y[contained] = (yi*np.exp(np.log(xk/xi)/np.log(xi1/xi)
                             *np.log(yi1/yi)))
 
-        # In some cases, x values might be outside the tabulated region due only
+        # In some cases, x values might be outside the tabulated region due
         # to precision, so we check if they're close and set them equal if so.
         y[np.isclose(x, self.x[0], atol=1e-14)] = self.y[0]
         y[np.isclose(x, self.x[-1], atol=1e-14)] = self.y[-1]
@@ -373,7 +373,8 @@ class Regions1D(Function1D):
         n_regions = len(regions_list)
         domainbreaks = np.zeros([n_regions*2])
         for i in range(n_regions):
-            domainRange = [regions_list[i].domainMin, regions_list[i].domainMax]
+            domainRange = [regions_list[i].domainMin, 
+                           regions_list[i].domainMax]
             domainbreaks[2*i:2*i+2] = domainRange
             self.regions.append(regions_list[i])
 
