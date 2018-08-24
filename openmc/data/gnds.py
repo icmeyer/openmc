@@ -1,16 +1,10 @@
-# Development notes:
-# Want to devlop some objects to assist in creating datastructures
-# that are similar to GNDS.
 from collections import Iterable, Callable
 from numbers import Real, Integral
 
-from six import add_metaclass
 import numpy as np
-from numpy.polynomial.legendre import legval
 
 import openmc.data
 import openmc.checkvalue as cv
-from openmc.mixin import EqualityMixin
 from .function import Function1D
 from .data import EV_PER_MEV
 
@@ -51,7 +45,7 @@ def gnds_from_ace(ace, idx=0, convert_units=True):
 
     # Get (x,y) pairs
     idx += 2*n_regions + 1
-    x = ace.xss[idx:idx + n_pairs].copy()
+    x = ace.xss[idx : idx + n_pairs].copy()
     y = ace.xss[idx+n_pairs : idx+2*n_pairs].copy()
 
     if convert_units:
@@ -80,7 +74,7 @@ def gnds_from_ace(ace, idx=0, convert_units=True):
                 region_x = x[breakpoints[i]:]
                 region_y = y[breakpoints[i]:]
             interpolation = interp_ints[i]
-            regions.append(XYs1D(region_x,region_y,interpolation))
+            regions.append(XYs1D(region_x, region_y, interpolation))
 
         return Regions1D(regions)
 
@@ -130,7 +124,7 @@ class XYs1D(Function1D):
 
     def __init__(self, x, y, interpolation=None):
         if interpolation is None:
-            #linear-linear interpolation by default
+            # linear-linear interpolation by default
             self.interpolation = 2
         else:
             self.interpolation = interpolation
@@ -155,7 +149,7 @@ class XYs1D(Function1D):
         # Get indices for interpolation
         idx = np.searchsorted(self.x, x, side='right') - 1
 
-        i_begin = 0;
+        i_begin = 0
         i_end = self.n_pairs - 1
         # Figure out which idx values lie within this region
         contained = (idx >= i_begin) & (idx < i_end)
@@ -187,8 +181,8 @@ class XYs1D(Function1D):
             y[contained] = (yi*np.exp(np.log(xk/xi)/np.log(xi1/xi)
                             *np.log(yi1/yi)))
 
-        #In some cases, x values might be outside the tabulated region due only
-        #to precision, so we check if they're close and set them equal if so.
+        # In some cases, x values might be outside the tabulated region due only
+        # to precision, so we check if they're close and set them equal if so.
         y[np.isclose(x, self.x[0], atol=1e-14)] = self.y[0]
         y[np.isclose(x, self.x[-1], atol=1e-14)] = self.y[-1]
 
@@ -419,7 +413,7 @@ class Regions1D(Function1D):
         n_regions = len(regions_list)
         domainbreaks = np.zeros([n_regions*2])
         for i in range(n_regions):
-            domainRange = [regions_list[i].domainMin,regions_list[i].domainMax]
+            domainRange = [regions_list[i].domainMin, regions_list[i].domainMax]
             domainbreaks[2*i:2*i+2] = domainRange
             self.regions.append(regions_list[i])
 
@@ -428,7 +422,7 @@ class Regions1D(Function1D):
             if domainbreaks[i+1] != domainbreaks[i+2]:
                 raise ValueError('Domain bounds of regions do not match')
             # Eliminate duplicate value
-            domainbreaks = np.delete(domainbreaks,(i+2))
+            domainbreaks = np.delete(domainbreaks, (i+2))
             if domainbreaks[i+1] > domainbreaks[i+2]:
                 raise ValueError('Domains are not monotonically increasing')
 
@@ -437,7 +431,7 @@ class Regions1D(Function1D):
         self.domainMax = domainbreaks[-1]
         self.n_regions = n_regions
 
-    def __call__(self,x):
+    def __call__(self, x):
         # Check if input is array or scalar
         if isinstance(x, Iterable):
             iterable = True
@@ -452,7 +446,7 @@ class Regions1D(Function1D):
         # Get indices for interpolation
         idx = np.searchsorted(self.domainbreaks, x)
 
-        #Loop over interpolation regions
+        # Loop over interpolation regions
         for k in range(self.n_regions):
             # Get indices for the beginning and ending of this region
             regionBegin = self.domainbreaks[k]
@@ -460,16 +454,16 @@ class Regions1D(Function1D):
 
             # Figure out which x values lie within this region
             contained = (x >= regionBegin) & (x < regionEnd)
-            xk = x[contained] # Apply mask
+            # Apply mask
+            xk = x[contained]
 
-            #Fill y-values using the member object
+            # Fill y-values using the member object
             y[contained] = self.region[0](xk)
 
-        # In some cases, x values might be outside the tabulated region due only
+        # In some cases, x values might be outside the tabulated region due
         # to precision, so we check if they're close and set them equal if so.
-
-        y[np.isclose(x,self.x[ 0],atol=1e-14)] = self.regions[ 0](self.domainMin)
-        y[np.isclose(x,self.x[-1],atol=1e-14)] = self.regions[-1](self.domainMax)
+        y[np.isclose(x, self.x[0], atol=1e-14)] = self.regions[0](self.domainMin)
+        y[np.isclose(x, self.x[-1], atol=1e-14)] = self.regions[-1](self.domainMax)
 
         return y if iterable else y[0]
 
@@ -528,7 +522,7 @@ class Regions1D(Function1D):
         group.attrs['type'] = np.string_(type(self).__name__)
         group.attrs['domainbreaks'] = self.domainbreaks
         for idx, region in enumerate(self.regions):
-            region.to_hdf5(group, name = 'region_'+str(idx))
+            region.to_hdf5(group, name='region_'+str(idx))
 
     @classmethod
     def from_hdf5(cls, group):
@@ -556,4 +550,3 @@ class Regions1D(Function1D):
                         regions.append(subclass.from_hdf5(dataset))
 
         return cls(regions)
-
