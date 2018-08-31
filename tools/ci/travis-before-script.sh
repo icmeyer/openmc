@@ -7,7 +7,7 @@ sh -e /etc/init.d/xvfb start
 
 # Download NNDC HDF5 data
 if [[ ! -e $HOME/nndc_hdf5/cross_sections.xml ]]; then
-    wget https://www.dropbox.com/s/f7rp3o73adkt5zd/nndc_hdf5.tar.gz -O - | tar -C $HOME -xvJ
+    wget https://www.dropbox.com/s/mhfvhzps20yfj3a/nndc_hdf5.tar.xz?dl=0 -O - | tar -C $HOME -xvJ
 fi
 
 # Download ENDF/B-VII.1 distribution
