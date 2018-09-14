@@ -22,7 +22,7 @@ class Product(EqualityMixin):
 
     Attributes
     ----------
-    applicability : Iterable of openmc.data.Tabulated1D
+    applicability : Iterable of openmc.data.Function1D
         Probability of sampling a given distribution for this product.
     decay_rate : float
         Decay rate in inverse seconds
@@ -90,7 +90,7 @@ class Product(EqualityMixin):
     @applicability.setter
     def applicability(self, applicability):
         cv.check_type('product distribution applicability', applicability,
-                      Iterable, XYs1D)
+                      Iterable, (XYs1D, Tabulated1D))
         self._applicability = applicability
 
     @decay_rate.setter
