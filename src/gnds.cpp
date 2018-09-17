@@ -9,6 +9,7 @@
 
 #include "openmc/constants.h"
 #include "openmc/endf.h"
+#include "openmc/error.h"
 #include "openmc/function.h"
 #include "openmc/hdf5_interface.h"
 #include "openmc/math_functions.h"
@@ -33,6 +34,10 @@ get_function1D(hid_t group, const char* name)
     function = UPtrFunction{new Regions1D{obj}};
   } else if (temp == "Tabulated1D") {
     function = UPtrFunction{new Tabulated1D{obj}};
+  } else {
+    std::stringstream err_msg;
+    err_msg << "Unkown function type '" << temp << "' in HDF5 file";
+    fatal_error(err_msg);
   }
   close_object(obj);
   return function;
