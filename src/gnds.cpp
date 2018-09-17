@@ -31,6 +31,8 @@ get_function1D(hid_t group, const char* name)
     function = UPtrFunction{new Polynomial{obj}};
   } else if (temp == "Regions1D") {
     function = UPtrFunction{new Regions1D{obj}};
+  } else if (temp == "Tabulated1D") {
+    function = UPtrFunction{new Tabulated1D{obj}};
   }
   close_object(obj);
   return function;
