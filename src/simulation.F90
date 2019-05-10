@@ -406,24 +406,6 @@ contains
       call statepoint_batch % add(current_batch)
     end if
 
-    ! Write out state point if it's been specified for this batch
-    if (statepoint_batch % contains(current_batch)) then
-      call write_state_point()
-    end if
-
-    ! Write out source point if it's been specified for this batch
-    if ((sourcepoint_batch % contains(current_batch) .or. source_latest) .and. &
-         source_write) then
-      call write_source_point()
-    end if
-
-    if (master .and. current_batch == n_max_batches .and. &
-         run_mode == MODE_EIGENVALUE) then
-      ! Make sure combined estimate of k-effective is calculated at the last
-      ! batch in case no state point is written
-      call calculate_combined_keff()
-    end if
-
     ! sensitivities calculation by combining tallies and neutron importances
     if (sen_on) then
        if (adjointmethod == 1) then
@@ -452,6 +434,24 @@ contains
        end if
        if (current_batch == n_max_batches) call sen_statistics()
     end if 
+
+    ! Write out state point if it's been specified for this batch
+    if (statepoint_batch % contains(current_batch)) then
+      call write_state_point()
+    end if
+
+    ! Write out source point if it's been specified for this batch
+    if ((sourcepoint_batch % contains(current_batch) .or. source_latest) .and. &
+         source_write) then
+      call write_source_point()
+    end if
+
+    if (master .and. current_batch == n_max_batches .and. &
+         run_mode == MODE_EIGENVALUE) then
+      ! Make sure combined estimate of k-effective is calculated at the last
+      ! batch in case no state point is written
+      call calculate_combined_keff()
+    end if
 
   end subroutine finalize_batch
 

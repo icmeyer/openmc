@@ -50,13 +50,15 @@ contains
     integer, allocatable :: key_array(:)
     integer(HID_T) :: file_id
     integer(HID_T) :: cmfd_group, tallies_group, tally_group, meshes_group, &
-                      mesh_group, filter_group, runtime_group
+                      mesh_group, filter_group, runtime_group, &
+                      sensitivity_group, sens_group
     character(MAX_WORD_LEN), allocatable :: str_array(:)
     character(MAX_FILE_LEN)    :: filename
     type(RegularMesh), pointer :: meshp
     type(TallyObject), pointer    :: tally
     type(ElemKeyValueII), pointer :: current
     type(ElemKeyValueII), pointer :: next
+    type(SensitivityObject), pointer :: t
 
     ! Set filename for state point
     filename = trim(path_output) // 'statepoint.' // &
@@ -390,6 +392,23 @@ contains
       end if
       call write_dataset(runtime_group, "total", time_total % get_value())
       call close_group(runtime_group)
+
+      ! Adullah/Isaac additions
+      ! Write out sensitivity results
+      sensitivity_group = create_group(file_id, "sensitivity")
+      SENSITIVITY_RESULTS: do i = 1, n_sens
+        ! Set point to current tally
+        t => sensitivities(i)
+        ! Write sum and sum_sq for each bin
+        sens_group = create_group(sensitivity_group, "sensitivity_" &
+             // trim(to_str(t % id)))
+        call write_dataset(sens_group, "energystructure", t % energystructure)
+        call write_dataset(sens_group, "method", t % method)
+        call write_dataset(sens_group, "name", t % name)
+        call write_dataset(sens_group, "results", t % results)
+        call close_group(sens_group)
+      end do SENSITIVITY_RESULTS
+      call close_group(sensitivity_group)
 
       call file_close(file_id)
     end if
