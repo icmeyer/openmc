@@ -5369,8 +5369,20 @@ contains
          else if (s % n_energy_bins == 1) then
             allocate(s % energystructure(2))
             s % energystructure = energystructure1
+         else if (s % n_energy_bins == 1000) then
+            allocate(s % energystructure(1001))
+            s % energystructure = energystructure1000
+         else if (s % n_energy_bins == 10000) then
+            allocate(s % energystructure(10001))
+            s % energystructure = energystructure10000
+         else if (s % n_energy_bins == 101) then
+            allocate(s % energystructure(102))
+            s % energystructure = energystructure101
+         else if (s % n_energy_bins == 501) then
+            allocate(s % energystructure(502))
+            s % energystructure = energystructure501
          else
-            call fatal_error("Could not find energystrcuture " &
+            call fatal_error("Could not find energystructure " &
                 // trim(to_str(s % n_energy_bins)) &
                 // " specified on sensitivity " // trim(to_str(s % id)))
          end if
